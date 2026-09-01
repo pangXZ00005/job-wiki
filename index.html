@@ -1,0 +1,646 @@
+<!-- index.html -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  
+  // 여기에 Firebase 설정을 붙여넣고 바로 코딩을 시작하면 됩니다!
+</script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>직업위키 | 우리 반 진로 백과사전</title>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    body {
+        font-family: Arial, "Noto Sans KR", sans-serif;
+        background: #f5f6f8;
+        color: #202124;
+    }
+    /* 상단 */
+    header {
+        background: #ffffff;
+        border-bottom: 1px solid #ddd;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    .header-inner {
+        max-width: 1200px;
+        margin: auto;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+    }
+    .logo {
+        font-size: 24px;
+        font-weight: 800;
+        color: #315efb;
+        cursor: pointer;
+    }
+    .logo span {
+        color: #222;
+    }
+    .add-btn {
+        background: #315efb;
+        color: white;
+        border: none;
+        padding: 11px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .add-btn:hover {
+        background: #244bd1;
+    }
+    /* 메인 */
+    main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    .hero {
+        background: white;
+        border-radius: 16px;
+        padding: 45px 30px;
+        text-align: center;
+        margin-bottom: 30px;
+        border: 1px solid #e2e2e2;
+    }
+    .hero h1 {
+        font-size: 38px;
+        margin-bottom: 12px;
+    }
+    .hero p {
+        color: #666;
+        margin-bottom: 25px;
+    }
+    /* 검색 */
+    .search-box {
+        max-width: 650px;
+        margin: auto;
+        display: flex;
+        gap: 10px;
+    }
+    .search-box input {
+        flex: 1;
+        padding: 15px 18px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        font-size: 16px;
+        outline: none;
+    }
+    .search-box input:focus {
+        border-color: #315efb;
+    }
+    .search-box button {
+        background: #315efb;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0 22px;
+        cursor: pointer;
+    }
+    /* 분야 */
+    .category-area {
+        margin-bottom: 30px;
+    }
+    .category-area h2 {
+        margin-bottom: 15px;
+    }
+    .categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .category {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 10px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+    }
+    .category:hover,
+    .category.active {
+        background: #315efb;
+        color: white;
+        border-color: #315efb;
+    }
+    /* 직업 카드 */
+    .job-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 18px;
+    }
+    .job-card {
+        background: white;
+        border: 1px solid #e1e1e1;
+        border-radius: 14px;
+        padding: 22px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .job-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    }
+    .job-category {
+        color: #315efb;
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+    .job-card h3 {
+        font-size: 21px;
+        margin-bottom: 10px;
+    }
+    .job-card p {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    /* 모달 */
+    .modal-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 200;
+    }
+    .modal {
+        width: 100%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow-y: auto;
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+    .close {
+        border: none;
+        background: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: #777;
+    }
+    .info-section {
+        margin-bottom: 22px;
+    }
+    .info-section h4 {
+        margin-bottom: 7px;
+        color: #315efb;
+    }
+    .info-section p {
+        line-height: 1.7;
+        white-space: pre-wrap;
+    }
+    .modal-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+    .modal-buttons button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .edit-btn {
+        background: #eee;
+    }
+    .delete-btn {
+        background: #ffe5e5;
+        color: #d00;
+    }
+    /* 폼 */
+    .form-group {
+        margin-bottom: 17px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 7px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .save-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        background: #315efb;
+        color: white;
+        font-size: 15px;
+        cursor: pointer;
+    }
+    .empty {
+        text-align: center;
+        padding: 50px;
+        color: #777;
+    }
+    footer {
+        text-align: center;
+        color: #888;
+        padding: 40px 20px;
+        font-size: 13px;
+    }
+    @media (max-width: 600px) {
+        .hero h1 {
+            font-size: 28px;
+        }
+        .search-box {
+            flex-direction: column;
+        }
+        .search-box button {
+            padding: 12px;
+        }
+    }
+</style>
+</head>
+<body>
+<header>
+    <div class="header-inner">
+        <div class="logo" onclick="goHome()">
+            직업<span>위키</span>
+        </div>
+    <button class="add-btn" onclick="openAddModal()">
+        + 직업 추가
+    </button>
+</div>
+</header>
+<main>
+<section class="hero">
+    <h1>우리 반 직업위키</h1>
+    <p>학생들이 직접 만들고 공유하는 진로 백과사전</p>
+    <div class="search-box">
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="직업을 검색해보세요. 예) 의사, 개발자, 디자이너"
+            oninput="renderJobs()"
+        >
+        <button onclick="renderJobs()">검색</button>
+    </div>
+</section>
+<section class="category-area">
+    <h2>📂 직업 분야</h2>
+    <div class="categories">
+        <button class="category active" onclick="filterCategory('전체', this)">
+            전체
+        </button>
+        <button class="category" onclick="filterCategory('IT·공학', this)">
+            💻 IT·공학
+        </button>
+        <button class="category" onclick="filterCategory('의료·보건', this)">
+            🏥 의료·보건
+        </button>
+        <button class="category" onclick="filterCategory('경영·경제', this)">
+            💼 경영·경제
+        </button>
+        <button class="category" onclick="filterCategory('예술·디자인', this)">
+            🎨 예술·디자인
+        </button>
+        <button class="category" onclick="filterCategory('스포츠', this)">
+            🏎️ 스포츠
+        </button>
+        <button class="category" onclick="filterCategory('교육·연구', this)">
+            📚 교육·연구
+        </button>
+    </div>
+</section>
+<section>
+    <h2 style="margin-bottom:18px;">📖 직업 목록</h2>
+    <div id="jobList" class="job-list"></div>
+</section>
+</main>
+<footer>
+    우리 반 직업위키 · 학생 참여형 진로 탐색 프로젝트
+</footer>
+<!-- 직업 상세 모달 -->
+<div class="modal-bg" id="detailModal">
+<div class="modal">
+    <div class="modal-header">
+        <h2 id="detailTitle"></h2>
+        <button class="close" onclick="closeModal('detailModal')">
+            ×
+        </button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modal-buttons">
+        <button class="edit-btn" onclick="editCurrentJob()">
+            ✏️ 수정
+        </button>
+        <button class="delete-btn" onclick="deleteCurrentJob()">
+            🗑️ 삭제
+        </button>
+    </div>
+</div>
+</div>
+<!-- 직업 추가/수정 모달 -->
+<div class="modal-bg" id="formModal">
+<div class="modal">
+    <div class="modal-header">
+        <h2 id="formTitle">직업 추가</h2>
+        <button class="close" onclick="closeModal('formModal')">
+            ×
+        </button>
+    </div>
+    <form id="jobForm">
+        <div class="form-group">
+            <label>직업명</label>
+            <input type="text" id="jobName" required>
+        </div>
+        <div class="form-group">
+            <label>분야</label>
+            <select id="jobCategory">
+                <option>IT·공학</option>
+                <option>의료·보건</option>
+                <option>경영·경제</option>
+                <option>예술·디자인</option>
+                <option>스포츠</option>
+                <option>교육·연구</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>직업 소개</label>
+            <textarea id="jobDescription" required></textarea>
+        </div>
+        <div class="form-group">
+            <label>주요 업무</label>
+            <textarea id="jobWork"></textarea>
+        </div>
+        <div class="form-group">
+            <label>필요한 역량</label>
+            <textarea id="jobSkills"></textarea>
+        </div>
+        <div class="form-group">
+            <label>관련 학과</label>
+            <textarea id="jobMajor"></textarea>
+        </div>
+        <div class="form-group">
+            <label>직업 전망</label>
+            <textarea id="jobFuture"></textarea>
+        </div>
+        <div class="form-group">
+            <label>참고 자료 / 출처</label>
+            <textarea id="jobSource"></textarea>
+        </div>
+        <button class="save-btn" type="submit">
+            저장하기
+        </button>
+    </form>
+</div>
+</div>
+<script>
+    // 기본 직업 데이터
+    let jobs = JSON.parse(localStorage.getItem("jobs")) || [
+        {
+            id: 1,
+            name: "소프트웨어 개발자",
+            category: "IT·공학",
+            description: "컴퓨터 프로그램과 소프트웨어를 설계하고 개발하는 직업입니다.",
+            work: "프로그램 개발, 코드 작성, 오류 수정, 시스템 유지보수",
+            skills: "논리적 사고력, 문제 해결 능력, 프로그래밍 능력",
+            major: "컴퓨터공학과, 소프트웨어학과, AI 관련 학과",
+            future: "AI와 디지털 기술의 발전으로 다양한 산업에서 수요가 이어지고 있습니다.",
+            source: "워크넷 / 관련 학과 자료"
+        },
+        {
+            id: 2,
+            name: "의사",
+            category: "의료·보건",
+            description: "환자의 질병이나 부상을 진단하고 치료하는 의료 전문가입니다.",
+            work: "환자 진료, 질병 진단, 치료 계획 수립, 수술 및 처치",
+            skills: "의학 지식, 판단력, 의사소통 능력, 책임감",
+            major: "의예과 / 의학과",
+            future: "의료 서비스의 지속적인 필요성으로 안정적인 수요가 예상됩니다.",
+            source: "워크넷 / 보건복지 관련 자료"
+        },
+        {
+            id: 3,
+            name: "F1 드라이버",
+            category: "스포츠",
+            description: "포뮬러 원(F1) 경주에 참가하여 최고의 기록과 순위를 경쟁하는 전문 레이싱 드라이버입니다.",
+            work: "레이스 참가, 차량 테스트, 시뮬레이터 훈련, 팀과의 피드백",
+            skills: "높은 집중력, 반응속도, 체력, 차량 이해 능력",
+            major: "특정 전공 필수 없음. 모터스포츠 경험과 전문 훈련이 중요",
+            future: "F1을 비롯한 모터스포츠 산업의 성장과 함께 전문 드라이버에 대한 관심이 지속되고 있습니다.",
+            source: "FIA / Formula 1 공식 자료"
+        }
+    ];
+    let currentCategory = "전체";
+    let currentJobId = null;
+    let editingId = null;
+    // 데이터 저장
+    function saveJobs() {
+        localStorage.setItem("jobs", JSON.stringify(jobs));
+    }
+    // 직업 목록 출력
+    function renderJobs() {
+        const list = document.getElementById("jobList");
+        const search =
+            document.getElementById("searchInput")
+            .value
+            .toLowerCase()
+            .trim();
+        let filtered = jobs.filter(job => {
+            const categoryMatch =
+                currentCategory === "전체" ||
+                job.category === currentCategory;
+            const searchMatch =
+                job.name.toLowerCase().includes(search) ||
+                job.description.toLowerCase().includes(search);
+            return categoryMatch && searchMatch;
+        });
+        list.innerHTML = "";
+        if (filtered.length === 0) {
+            list.innerHTML = `
+                <div class="empty">
+                    검색 결과가 없습니다.
+                </div>
+            `;
+            return;
+        }
+        filtered.forEach(job => {
+            const card = document.createElement("div");
+            card.className = "job-card";
+            card.onclick = () => openDetail(job.id);
+            card.innerHTML = `
+                <div class="job-category">
+                    ${job.category}
+                </div>
+                <h3>
+                    ${job.name}
+                </h3>
+                <p>
+                    ${job.description}
+                </p>
+            `;
+            list.appendChild(card);
+        });
+    }
+    // 분야 필터
+    function filterCategory(category, button) {
+        currentCategory = category;
+        document
+            .querySelectorAll(".category")
+            .forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+        renderJobs();
+    }
+    // 상세 페이지
+    function openDetail(id) {
+        const job = jobs.find(j => j.id === id);
+        if (!job) return;
+        currentJobId = id;
+        document.getElementById("detailTitle").textContent =
+            job.name;
+        document.getElementById("detailContent").innerHTML = `
+            <div class="info-section">
+                <h4>📂 분야</h4>
+                <p>${job.category}</p>
+            </div>
+            <div class="info-section">
+                <h4>💡 직업 소개</h4>
+                <p>${job.description}</p>
+            </div>
+            <div class="info-section">
+                <h4>🔧 주요 업무</h4>
+                <p>${job.work || "정보가 없습니다."}</p>
+            </div>
+            <div class="info-section">
+                <h4>🧠 필요한 역량</h4>
+                <p>${job.skills || "정보가 없습니다."}</p>
+            </div>
+            <div class="info-section">
+                <h4>🎓 관련 학과</h4>
+                <p>${job.major || "정보가 없습니다."}</p>
+            </div>
+            <div class="info-section">
+                <h4>📈 직업 전망</h4>
+                <p>${job.future || "정보가 없습니다."}</p>
+            </div>
+            <div class="info-section">
+                <h4>📚 참고 자료</h4>
+                <p>${job.source || "정보가 없습니다."}</p>
+            </div>
+        `;
+        document.getElementById("detailModal").style.display = "flex";
+    }
+    // 추가 창
+    function openAddModal() {
+        editingId = null;
+        document.getElementById("formTitle").textContent =
+            "직업 추가";
+        document.getElementById("jobForm").reset();
+        document.getElementById("formModal").style.display = "flex";
+    }
+    // 수정
+    function editCurrentJob() {
+        const job = jobs.find(j => j.id === currentJobId);
+        if (!job) return;
+        editingId = job.id;
+        document.getElementById("formTitle").textContent =
+            "직업 수정";
+        document.getElementById("jobName").value = job.name;
+        document.getElementById("jobCategory").value = job.category;
+        document.getElementById("jobDescription").value = job.description;
+        document.getElementById("jobWork").value = job.work;
+        document.getElementById("jobSkills").value = job.skills;
+        document.getElementById("jobMajor").value = job.major;
+        document.getElementById("jobFuture").value = job.future;
+        document.getElementById("jobSource").value = job.source;
+        closeModal("detailModal");
+        document.getElementById("formModal").style.display = "flex";
+    }
+    // 삭제
+    function deleteCurrentJob() {
+        if (!confirm("정말 이 직업 정보를 삭제할까요?")) return;
+        jobs = jobs.filter(j => j.id !== currentJobId);
+        saveJobs();
+        closeModal("detailModal");
+        renderJobs();
+    }
+    // 폼 저장
+    document.getElementById("jobForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const jobData = {
+            name: document.getElementById("jobName").value,
+            category: document.getElementById("jobCategory").value,
+            description: document.getElementById("jobDescription").value,
+            work: document.getElementById("jobWork").value,
+            skills: document.getElementById("jobSkills").value,
+            major: document.getElementById("jobMajor").value,
+            future: document.getElementById("jobFuture").value,
+            source: document.getElementById("jobSource").value
+        };
+        if (editingId !== null) {
+            const index =
+                jobs.findIndex(j => j.id === editingId);
+            jobs[index] = {
+                ...jobs[index],
+                ...jobData
+            };
+        } else {
+            jobs.push({
+                id: Date.now(),
+                ...jobData
+            });
+        }
+        saveJobs();
+        closeModal("formModal");
+        renderJobs();
+    });
+    // 모달 닫기
+    function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+    }
+    // 홈
+    function goHome() {
+        currentCategory = "전체";
+        document.getElementById("searchInput").value = "";
+        document
+            .querySelectorAll(".category")
+            .forEach(btn => btn.classList.remove("active"));
+        document
+            .querySelector(".category")
+            .classList.add("active");
+        renderJobs();
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+    // 최초 실행
+    renderJobs();
+</script>
+</body>
+</html>
